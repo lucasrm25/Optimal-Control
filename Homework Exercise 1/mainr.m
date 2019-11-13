@@ -1,7 +1,14 @@
 clear all; close all; clc;
-digits(5);
 
 %% User input
+
+saveimages = true;
+
+if saveimages
+    saveimg = @(fig,name,format) fp.savefig(fig,name,format);
+else
+    saveimg = @(fig,name,format) 0;
+end
 
 % cost function parameters
 Q = eye(2);
@@ -52,12 +59,12 @@ norm(x_opt_1-x_opt_1_KKT)
 fig = figure('Color','w'); hold on; grid on;
 plot_sim ( fig, x0, x_opt_1, u_opt_1, h, tf)
 title('Opt. control solution using exact discretization and quadprog solver');
-saveas(fig, 'question-f-exact-quadprog', 'jpg');
+saveimg(fig, 'question-f-exact-quadprog', 'jpg');
 
 fig = figure('Color','w'); hold on; grid on;
 plot_sim ( fig, x0, x_opt_1_KKT, u_opt_1_KKT, h, tf)
 title('Opt. control solution using exact discretization and KKT-cond');
-saveas(fig, 'question-f-exact-KKT', 'jpg');
+saveimg(fig, 'question-f-exact-KKT', 'jpg');
 
 
 [H, f, d, Aeq, beq]        = define_opt_control_problem (Ad_2, Bd_2, Q, R, x0, N, n, m);
@@ -69,12 +76,12 @@ norm(x_opt_2-x_opt_2_KKT)
 fig = figure('Color','w'); hold on; grid on;
 plot_sim ( fig, x0, x_opt_2, u_opt_2, h, tf)
 title('Opt. control solution using Euler discretization and quadprog solver');
-saveas(fig, 'question-f-euler', 'jpg');
+saveimg(fig, 'question-f-euler', 'jpg');
 
 fig = figure('Color','w'); hold on; grid on;
 plot_sim ( fig, x0, x_opt_2_KKT, u_opt_2_KKT, h, tf)
 title('Opt. control solution using Euler discretization and KKT-cond');
-saveas(fig, 'question-f-euler', 'jpg');
+saveimg(fig, 'question-f-euler', 'jpg');
 
 
 fig = figure('Color','w'); hold on; grid on;
@@ -82,7 +89,7 @@ plot_sim ( fig, x0*0, x_opt_1-x_opt_2, u_opt_1-u_opt_2, h, tf)
 title({'Difference of optimal states and control inputs',
        'for exact and euler discretization methods',
        'using quadprog solver'});
-saveas(fig, 'question-f-error', 'jpg');
+saveimg(fig, 'question-f-error', 'jpg');
 
 
 
@@ -94,7 +101,7 @@ saveas(fig, 'question-f-error', 'jpg');
 fig = figure('Color','w'); hold on; grid on;
 plot_sim ( fig, x0, x_opt, u_opt, h, tf)
 title('Opt. control solution using exact discretization - Q = 0.2*I_2');
-saveas(fig, 'question-g-alpha-0p2', 'jpg');
+saveimg(fig, 'question-g-alpha-0p2', 'jpg');
 
 
 [H, f, d, Aeq, beq] = define_opt_control_problem (Ad_1, Bd_1, 1*Q, R, x0, N, n, m);
@@ -103,7 +110,7 @@ saveas(fig, 'question-g-alpha-0p2', 'jpg');
 fig = figure('Color','w'); hold on; grid on;
 plot_sim ( fig, x0, x_opt, u_opt, h, tf)
 title('Opt. control solution using exact discretization - Q = 1*I_2');
-saveas(fig, 'question-g-alpha-1p0', 'jpg');
+saveimg(fig, 'question-g-alpha-1p0', 'jpg');
 
 
 [H, f, d, Aeq, beq] = define_opt_control_problem (Ad_1, Bd_1, 40*Q, R, x0, N, n, m);
@@ -112,29 +119,30 @@ saveas(fig, 'question-g-alpha-1p0', 'jpg');
 fig = figure('Color','w'); hold on; grid on;
 plot_sim ( fig, x0, x_opt, u_opt, h, tf)
 title('Opt. control solution using exact discretization - Q = 40*I_2');
-saveas(fig, 'question-g-alpha-40p0', 'jpg');
+saveimg(fig, 'question-g-alpha-40p0', 'jpg');
 
 
 %% Question H) Compare continuous-time and discrete-time solution using the optimal control input
 
+u     = u_opt_1;
+x_opt = x_opt_1;
 
-
-% sysc = ss(Ac,Bc,eye(n),0);
-% sysd = c2d(sysc, h, 'zoh');
-% step(sysc,'-',sysd,'--')
-
-% continous time simulation
 sys = ss(Ac,Bc,eye(n),0);
 [y,t,x] = lsim(sys, u_opt_1, 0:h:tf-h, x0, 'zoh');
 
-fig = figure('Color','w'); hold on; grid on;
-plot ( 1:N-1, x_opt_1-x(1:end-1,:)', 'LineWidth',2)
+figure('Color','w'); hold on; grid on;
+plot(1:N-1, x_opt, '-', 'LineWidth',2)
+plot(1:N-1, x(2:end,:)', '-.', 'LineWidth',2)
+
+fig = figure('Color','white','Position',[-1734   449   715   282]); 
+hold on; grid on;
+plot ( 1:N-1, x_opt-x(2:end,:)', 'LineWidth',2)
 legend('error x(1)','error x(2)')
 title('Error between continuous time and discrete time simulation');
-saveas(fig, 'question-h-discretization-error', 'jpg');
+saveimg(fig, 'question-h-discretization-error', 'jpg');
 
 
-close all;
+% close all;
 
 
 
