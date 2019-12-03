@@ -1,14 +1,23 @@
 clear all; close all; clc;
 
-%% User input
+%% config
 
-saveimages = true;
+saveimages = false;
+showtitles = true;
+
 
 if saveimages
     saveimg = @(fig,name,format) fp.savefig(fig,name,format);
-else
-    saveimg = @(fig,name,format) 0;
-end
+else, saveimg = @(fig,name,format) 0; end
+if showtitles
+    stitle = @(text) title(text);
+else, stitle = @(text) 0; end
+
+
+
+
+%% User input
+
 
 % cost function parameters
 Q = eye(2);
@@ -16,7 +25,7 @@ R = 1;
 
 % horizon length
 tf = 10;            % horizon length
-N = 50;            % number of steps
+N = 50;             % number of steps
 h = tf/N;           % step size
 
 % continuous dynamic equation parameters
@@ -50,38 +59,48 @@ Bd_1, Bd_2
 
 %% Question F) Lets verify the difference in the solution when using the two different discretization methods
 
+% Exact discretization (Ad_1,Bd_1)
 [H, f, d, Aeq, beq]        = define_opt_control_problem (Ad_1, Bd_1, Q, R, x0, N, n, m);
 [x_opt_1, u_opt_1]         = solve_opt_control_quadprog (H, f, d, Aeq, beq, N, n, m);
 [x_opt_1_KKT, u_opt_1_KKT] = solve_opt_control_KKT      (H, f, d, Aeq, beq, N, n, m);
 
-norm(x_opt_1-x_opt_1_KKT)
-
-fig = figure('Color','w'); hold on; grid on;
-plot_sim ( fig, x0, x_opt_1, u_opt_1, h, tf)
-title('Opt. control solution using exact discretization and quadprog solver');
-saveimg(fig, 'question-f-exact-quadprog', 'jpg');
-
-fig = figure('Color','w'); hold on; grid on;
-plot_sim ( fig, x0, x_opt_1_KKT, u_opt_1_KKT, h, tf)
-title('Opt. control solution using exact discretization and KKT-cond');
-saveimg(fig, 'question-f-exact-KKT', 'jpg');
-
-
+% Euler discretization (Ad_2,Bd_2)
 [H, f, d, Aeq, beq]        = define_opt_control_problem (Ad_2, Bd_2, Q, R, x0, N, n, m);
 [x_opt_2, u_opt_2]         = solve_opt_control_quadprog (H, f, d, Aeq, beq, N, n, m);
 [x_opt_2_KKT, u_opt_2_KKT] = solve_opt_control_KKT      (H, f, d, Aeq, beq, N, n, m);
 
-norm(x_opt_2-x_opt_2_KKT)
 
-fig = figure('Color','w'); hold on; grid on;
-plot_sim ( fig, x0, x_opt_2, u_opt_2, h, tf)
-title('Opt. control solution using Euler discretization and quadprog solver');
-saveimg(fig, 'question-f-euler', 'jpg');
+norm(x_opt_1-x_opt_1_KKT)
+norm(x_opt_1-x_opt_2)
 
-fig = figure('Color','w'); hold on; grid on;
-plot_sim ( fig, x0, x_opt_2_KKT, u_opt_2_KKT, h, tf)
-title('Opt. control solution using Euler discretization and KKT-cond');
-saveimg(fig, 'question-f-euler', 'jpg');
+
+
+fig = figure('Color','white','Position',[262  317  612  420]); hold on; grid on;
+clr = lines(20);
+stairs(0:h:tf-h, x_opt_1(1,:)', '-','Color',clr(1,:),'LineWidth',2,'DisplayName','x(1)_{quadprog}');
+stairs(0:h:tf-h, x_opt_1(2,:)', '-','Color',clr(2,:),'LineWidth',2,'DisplayName','x(2)_{quadprog}');
+stairs(0:h:tf-h, u_opt_1(1,:)', '-','Color',clr(3,:),'LineWidth',2,'DisplayName','u_{quadprog}'); 
+stairs(0:h:tf-h, x_opt_1_KKT(1,:)', '--','Color',clr(4,:),'LineWidth',2,'DisplayName','x(1)_{KKT}');
+stairs(0:h:tf-h, x_opt_1_KKT(2,:)', '--','Color',clr(5,:),'LineWidth',2,'DisplayName','x(2)_{KKT}');
+stairs(0:h:tf-h, u_opt_1_KKT(1,:)', '--','Color',clr(6,:),'LineWidth',2,'DisplayName','u_{KKT}'); 
+legend
+xlabel('time [s]')
+stitle('Comparison quadprog solver and KKT solution (for exact discretization)')
+saveimg(fig, 'question-f-quadprog-KKT', 'jpg');
+
+
+fig = figure('Color','white','Position',[877  305  612  420]); hold on; grid on;
+clr = lines(20);
+stairs(0:h:tf-h, x_opt_1(1,:)', '-','Color',clr(1,:),'LineWidth',2,'DisplayName','x(1)_{exact}');
+stairs(0:h:tf-h, x_opt_1(2,:)', '-','Color',clr(2,:),'LineWidth',2,'DisplayName','x(2)_{exact}');
+stairs(0:h:tf-h, u_opt_1(1,:)', '-','Color',clr(3,:),'LineWidth',2,'DisplayName','u_{exact}'); 
+stairs(0:h:tf-h, x_opt_2(1,:)', '--','Color',clr(4,:),'LineWidth',2,'DisplayName','x(1)_{Euler}');
+stairs(0:h:tf-h, x_opt_2(2,:)', '--','Color',clr(5,:),'LineWidth',2,'DisplayName','x(2)_{Euler}');
+stairs(0:h:tf-h, u_opt_2(1,:)', '--','Color',clr(6,:),'LineWidth',2,'DisplayName','u_{Euler}'); 
+legend
+xlabel('time [s]')
+stitle('Comparison exact and Euler discretizations (using quadprog solver)')
+saveimg(fig, 'question-f-disc', 'jpg');
 
 
 fig = figure('Color','w'); hold on; grid on;
@@ -92,6 +111,26 @@ title({'Difference of optimal states and control inputs',
 saveimg(fig, 'question-f-error', 'jpg');
 
 
+% h_e = 0.02:0.02:1;
+% err = 0*h_e;
+% for i=1:numel(h_e)
+%     % Euler discretization
+%     N = floor(tf/h_e(i));
+%     Ad_e = eye(n) + h_e(i)*Ac;
+%     Bd_e = Bc*h_e(i);
+%     [H, f, d, Aeq, beq] = define_opt_control_problem (Ad_e, Bd_e, Q, R, x0, N, n, m);
+%     [x_opt_e, u_opt_e]  = solve_opt_control_quadprog (H, f, d, Aeq, beq, N, n, m);
+%     err(i) = norm(x_opt_1' - interp1(0:h_e(i):tf-h_e(i), x_opt_e', 0:h:tf-h) );
+% end
+% 
+% fig = figure('Color','white','Position',[877  305  612  420]); hold on; grid on;
+% clr = lines(20);
+% plot(h_e, err, '-','Color',clr(1,:),'LineWidth',2);
+% xlabel('Time step size h [s]')
+% ylabel('Error norm')
+% saveimg(fig, 'question-f-err', 'jpg');
+
+
 
 %% Question G) What happens if we change Q?
 
@@ -100,7 +139,7 @@ saveimg(fig, 'question-f-error', 'jpg');
 
 fig = figure('Color','w'); hold on; grid on;
 plot_sim ( fig, x0, x_opt, u_opt, h, tf)
-title('Opt. control solution using exact discretization - Q = 0.2*I_2');
+stitle('Opt. control solution using exact discretization (Q = 0.2*I_2)');
 saveimg(fig, 'question-g-alpha-0p2', 'jpg');
 
 
@@ -109,7 +148,7 @@ saveimg(fig, 'question-g-alpha-0p2', 'jpg');
 
 fig = figure('Color','w'); hold on; grid on;
 plot_sim ( fig, x0, x_opt, u_opt, h, tf)
-title('Opt. control solution using exact discretization - Q = 1*I_2');
+stitle('Opt. control solution using exact discretization (Q = 1*I_2)');
 saveimg(fig, 'question-g-alpha-1p0', 'jpg');
 
 
@@ -118,7 +157,7 @@ saveimg(fig, 'question-g-alpha-1p0', 'jpg');
 
 fig = figure('Color','w'); hold on; grid on;
 plot_sim ( fig, x0, x_opt, u_opt, h, tf)
-title('Opt. control solution using exact discretization - Q = 40*I_2');
+stitle('Opt. control solution using exact discretization (Q = 40*I_2)');
 saveimg(fig, 'question-g-alpha-40p0', 'jpg');
 
 
@@ -130,15 +169,19 @@ x_opt = x_opt_1;
 sys = ss(Ac,Bc,eye(n),0);
 [y,t,x] = lsim(sys, u_opt_1, 0:h:tf-h, x0, 'zoh');
 
-figure('Color','w'); hold on; grid on;
-plot(1:N-1, x_opt, '-', 'LineWidth',2)
-plot(1:N-1, x(2:end,:)', '-.', 'LineWidth',2)
+% figure('Color','w'); hold on; grid on;
+% plot(0:h:tf-h, x_opt, '-', 'LineWidth',2)
+% plot(0:h:tf-h, x', '-.', 'LineWidth',2)
+% saveimg(fig, 'question-h-discretization-error', 'jpg');
 
-fig = figure('Color','white','Position',[-1734   449   715   282]); 
+
+fig = figure('Color','white','Position',[322  392  725  282]);
 hold on; grid on;
-plot ( 1:N-1, x_opt-x(2:end,:)', 'LineWidth',2)
+plot ( 0:h:tf-h, x_opt-x', 'o-','LineWidth',2)
+ylabel('Error')
+xlabel('Discretization time points t_k')
 legend('error x(1)','error x(2)')
-title('Error between continuous time and discrete time simulation');
+stitle('Error between continuous time and discrete time simulation');
 saveimg(fig, 'question-h-discretization-error', 'jpg');
 
 
@@ -154,31 +197,29 @@ function [H, f, d, Aeq, beq] = define_opt_control_problem ( Ad, Bd, Q, R, x0, N,
 
     gamma = zeros(N*n,N*m);
     for i=0:N-2
-        gamma = gamma + kron(diag(ones(N-i,1),-i),Ad^i*Bd);     % fill lower-diagonals with Ad^i*Bd
+        gamma = gamma + kron(diag(ones(N-i-1,1),-i-1),Ad^i*Bd);     % fill lower-diagonals with Ad^i*Bd
     end
-    gamma = gamma(1:(N-1)*n,:);     % remove last constraint that includes x_N
     
-    omega = [];
-    for i=1:N
+    omega = eye(n);
+    for i=1:N-1
         omega = [omega; Ad^i];                              % extend matrix
     end
-    omega = omega(1:(N-1)*n,:);     % remove last constraint that includes x_N
     
-    Qb = kron(eye(N-1),Q);
+    Qb = kron(eye(N),Q);
     Rb = kron(eye(N),R);                        % Rb = blkdiag(R, R, ..., R)
     
     %% Define quadratic minimization problem
 
     % J = (xb'*Qb*xb + ub'*Rb*ub + x0'*Q*x0)    =   0.5*[xb,ub]'*H*[xb,ub] + f'*[xb,ub]' + d
     %   where:
-    H = 2 * blkdiag(Qb,Rb);
-    f = zeros(n*(N-1)+m*N,1);   % f = zeros((n+m)*N,1);
-    d = x0' * Q * x0;
+    H = blkdiag(Qb,Rb);
+    f = zeros(N*(n+m),1);
+    d = 0;
 
     % equality constraints:  
     %  xb = omega*x0 + gamma*ub    =>   Aeq*[xb,ub] = beq
     %   where:
-    Aeq = [ eye(n*(N-1)), -gamma ];  % Aeq = [ eye(n*N), -gamma ];
+    Aeq = [ eye(n*N), -gamma ];  % Aeq = [ eye(n*N), -gamma ];
     beq = omega * x0;
 end
 
@@ -200,8 +241,8 @@ function [x_opt, u_opt] = solve_opt_control_quadprog (H, f, d, Aeq, beq, N, n, m
     % check constraints error: (Aeq*Y-beq)'
 
     % reshape solution
-    x_opt = reshape( Y(1:(N-1)*n), n, []);
-    u_opt = reshape( Y((N-1)*n+1:end), m, []);
+    x_opt = reshape( Y(1:N*n), n, []);
+    u_opt = reshape( Y(N*n+1:end), m, []);
 end
 
 function [x_opt, u_opt] = solve_opt_control_KKT (H, f, d, Aeq, beq, N, n, m)
@@ -210,7 +251,7 @@ function [x_opt, u_opt] = solve_opt_control_KKT (H, f, d, Aeq, beq, N, n, m)
     % 1 step solution
     if rank(H) == size(H,1)
         nu = -(Aeq/H*Aeq')\(Aeq/H*f + beq);
-        y  = -H\(Aeq'*nu + f);
+        Y  = -H\(Aeq'*nu + f);
         
     % 1 iterative solution - Newton's method
     else    
@@ -218,7 +259,7 @@ function [x_opt, u_opt] = solve_opt_control_KKT (H, f, d, Aeq, beq, N, n, m)
         tol  = 1e-12;
         maxiter = 20;
 
-        y = zeros((n+m)*N,1);
+        Y = zeros((n+m)*N,1);
         nu= zeros(n*N,1);
 
         iter  = 1;
@@ -226,10 +267,10 @@ function [x_opt, u_opt] = solve_opt_control_KKT (H, f, d, Aeq, beq, N, n, m)
         while iter<=maxiter && norm(delta) >= tol
             A = [ 0.5*(H'+H)  Aeq';
                   Aeq         zeros(n*N,n*N)];
-            b = -[0.5*(H'+H)*y+f+Aeq'*nu;
-                  Aeq*y-beq];
+            b = -[0.5*(H'+H)*Y+f+Aeq'*nu;
+                  Aeq*Y-beq];
             delta = A \ b;
-            y = y  + delta(1:N*(n+m));
+            Y = Y  + delta(1:N*(n+m));
             nu= nu + delta(N*(n+m)+1:end);
             fprintf('iter: %4d, tolerance:%f\n',iter,norm(delta));
             iter = iter+1;
@@ -237,8 +278,8 @@ function [x_opt, u_opt] = solve_opt_control_KKT (H, f, d, Aeq, beq, N, n, m)
     end
     
     % reshape solution
-    x_opt = reshape( y(1:(N-1)*n), n, []);
-    u_opt = reshape( y((N-1)*n+1:end), m, []);
+    x_opt = reshape( Y(1:N*n), n, []);
+    u_opt = reshape( Y(N*n+1:end), m, []);
 end
 
 
@@ -247,9 +288,9 @@ function plot_sim ( fig, x0, x_opt, u_opt, h, tf )
     figure(fig);
     clr = lines(20);
     % subplot(3,1,1)
-    stairs(0:h:tf-h, [x0(1), x_opt(1,:)]', '-','Color',clr(1,:),'LineWidth',2,'DisplayName','x(1)');
-    stairs(0:h:tf-h, [x0(2), x_opt(2,:)]', '-','Color',clr(2,:),'LineWidth',2,'DisplayName','x(2)');
-    stairs(0:h:tf-h, u_opt(1,:)',          '-','Color',clr(3,:),'LineWidth',2,'DisplayName','u'); 
+    stairs(0:h:tf-h, x_opt(1,:)', '-','Color',clr(1,:),'LineWidth',2,'DisplayName','x(1)');
+    stairs(0:h:tf-h, x_opt(2,:)', '-','Color',clr(2,:),'LineWidth',2,'DisplayName','x(2)');
+    stairs(0:h:tf-h, u_opt(1,:)', '-','Color',clr(3,:),'LineWidth',2,'DisplayName','u'); 
 
     legend
     xlabel('time [s]')
