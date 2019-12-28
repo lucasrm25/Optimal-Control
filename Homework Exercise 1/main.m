@@ -1,3 +1,6 @@
+% Lucas Rath
+% Julius Hiller
+
 clear all; close all; clc;
 
 %% config
