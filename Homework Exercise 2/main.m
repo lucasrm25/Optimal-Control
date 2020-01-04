@@ -3,19 +3,6 @@
 
 clear all; close all; clc;
 
-%% config
-
-saveimages = false;
-showtitles = true;
-
-
-if saveimages
-    saveimg = @(fig,name,format) fp.savefig(fig,name,format);
-else, saveimg = @(fig,name,format) 0; end
-if showtitles
-    stitle = @(text) title(text);
-else, stitle = @(text) 0; end
-
 
 %% Question 1
 
@@ -55,25 +42,42 @@ f = [2 2 3
 
 % max number of iterations
 kmax = 10;
+% residue
+epsilon = 1e-3;
 % discount factor
 gamma = 0.9;
 
+% allocate memory
+V = nan(kmax,n);
+u = zeros(n,1);
 
-V = zeros(kmax,n);
-for k=1:kmax   
-    % V(k+1,:) = min( fo + gamma * reshape(V(k,f),n,m), [],2);
+% init iteration variables
+V(1,:) = 0;
+
+
+k=1;
+while k<kmax
     for s=1:n
         % V = min{.}
         [V(k+1,s), idx] = min( fo(s,:) + gamma * V(k,f(s,:)) );
         % u = argmin{.}
         u(s) = idx-1;
     end
+    if norm(V(k+1,:)-V(k,:)) < epsilon
+        break;
+    end
+    k = k+1;
 end
+disp(V)
+disp(u')
 
-% show converged value function
-V(end,:)
+% plot iterations
 figure('Color','w'); hold on; grid on;
-plot(0:kmax,V)
+plot(0:kmax-1,V')
+xlabel('iteration')
+ylabel('Value function')
+legend({'V(\xi_1)','V(\xi_2)','V(\xi_3)','V(\xi_4)','V(\xi_5)','V(\xi_6)','V(\xi_7)','V(\xi_8)'}, 'Location', 'Northwest')
+
 
 % ---------------------------------------------------------------------
 %  Calculate optimal input sequence when starting at s=1
