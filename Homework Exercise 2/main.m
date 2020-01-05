@@ -41,7 +41,7 @@ f = [2 2 3
 % ---------------------------------------------------------------------
 
 % max number of iterations
-kmax = 10;
+kmax = 100;
 % residue
 epsilon = 1e-3;
 % discount factor
