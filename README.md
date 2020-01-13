@@ -11,7 +11,6 @@
 - [x] Value function iteration algorithm
 - [x] Value function as a Linear Programing
 - [x] Convergence proofs of value iteration
-
 - [x] Discrete-time Model-Predictive Control (MPC)
 - [x] Stability proofs of MPC
 
