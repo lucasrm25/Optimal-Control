@@ -1,4 +1,5 @@
 # Optimal Control
+Repository for the course "Optimal Control" at University of Stuttgart
 
 ## Home-Exercise 01
 
